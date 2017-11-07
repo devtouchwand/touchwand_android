@@ -38,78 +38,7 @@ public class MainActivity extends Activity {
 	private String currAddress = "cloud.touchwand.com";
 
 	private WebView webView;
-
-	//	// HTTP GET request
-	//		private void sendGet() throws Exception {
-	//
-	//			String url = "http://www.google.com/search?q=mkyong";
-	//
-	//			URL obj = new URL(url);
-	//			HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-	//
-	//			// optional default is GET
-	//			con.setRequestMethod("GET");
-	//
-	//			//add request header
-	//			con.setRequestProperty("User-Agent", USER_AGENT);
-	//
-	//			int responseCode = con.getResponseCode();
-	//			System.out.println("\nSending 'GET' request to URL : " + url);
-	//			System.out.println("Response Code : " + responseCode);
-	//
-	//			BufferedReader in = new BufferedReader(
-	//			        new InputStreamReader(con.getInputStream()));
-	//			String inputLine;
-	//			StringBuffer response = new StringBuffer();
-	//
-	//			while ((inputLine = in.readLine()) != null) {
-	//				response.append(inputLine);
-	//			}
-	//			in.close();
-	//
-	//			//print result
-	//			System.out.println(response.toString());
-	//
-	//		}
-
-	//		// HTTP POST request
-	//		private WebResourceResponse sendRequest(WebResourceRequest request) throws Exception {
-	//
-	//			URL obj = new URL(request.getUrl().getScheme(),request.getUrl().getHost(),request.getUrl().getPort(),request.getUrl().getPath());
-	//			HttpsURLConnection con = (HttpsURLConnection) obj.openConnection();
-	//
-	//			//add reuqest header
-	//			con.setRequestMethod(request.getMethod());
-	//			con.setRequestProperty("User-Agent", "");
-	//			con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
-	//
-	//
-	//			// Send post request
-	//			con.setDoOutput(true);
-	//			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
-	//			wr.writeBytes(request.);
-	//			wr.flush();
-	//			wr.close();
-	//
-	//			int responseCode = con.getResponseCode();
-	//			System.out.println("\nSending 'POST' request to URL : " + url);
-	//			System.out.println("Post parameters : " + urlParameters);
-	//			System.out.println("Response Code : " + responseCode);
-	//
-	//			BufferedReader in = new BufferedReader(
-	//			        new InputStreamReader(con.getInputStream()));
-	//			String inputLine;
-	//			StringBuffer response = new StringBuffer();
-	//
-	//			while ((inputLine = in.readLine()) != null) {
-	//				response.append(inputLine);
-	//			}
-	//			in.close();
-	//
-	//			return response.toString();
-	//			
-	//
-	//		}
+	private boolean allowedSsl = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -135,11 +64,6 @@ public class MainActivity extends Activity {
 
 		webView.getSettings().setJavaScriptEnabled(true);
 
-		//webView.getSettings().setAppCachePath(getApplicationContext().getCacheDir().getAbsolutePath());
-
-		//webView.getSettings().setAppCacheEnabled(true); 
-
-//		webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
 
 		webView.getSettings().setAllowFileAccessFromFileURLs(true); //Maybe you don't need this rule
 		webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
@@ -162,49 +86,30 @@ public class MainActivity extends Activity {
 				findViewById(R.id.webView).setVisibility(View.VISIBLE);
 			}
 			@Override
-			public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-				handler.proceed(); // Ignore SSL certificate errors
-			}
+			public void onReceivedSslError(WebView view, final SslErrorHandler handler, SslError error) {
 
-			@Override
-			public boolean shouldOverrideUrlLoading(WebView view, String url) {
-				if(!url.startsWith("https://"))
-				{
-					webView.loadUrl(url);
+				if(!allowedSsl) {
+					final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+					builder.setMessage("Press continue if you sure you are connected to your own controller");
+					builder.setPositiveButton("continue", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+
+							handler.proceed();
+
+							allowedSsl = true;
+						}
+					});
+					builder.setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							handler.cancel();
+						}
+					});
+					final AlertDialog dialog = builder.create();
+					dialog.show();
 				}
-				return false;
 			}
-
-
-			//			@Override
-			//			public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-			//
-			//				if(request.getMethod().equalsIgnoreCase("GET") && (request.getUrl().getPath().endsWith(".html") || request.getUrl().getPath().endsWith(".jpg") || request.getUrl().getPath().endsWith(".png") || request.getUrl().getPath().endsWith(".jpeg"))){
-			//					try {
-			//						URL url = new URL(request.getUrl().getScheme(),request.getUrl().getHost(),request.getUrl().getPort(), request.getUrl().getPath());
-			//						HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-			//						connection.setRequestProperty("User-Agent", "");
-			//						connection.setRequestMethod("GET");
-			//						connection.setDoInput(true);
-			//						connection.connect();
-			//
-			//						InputStream inputStream = connection.getInputStream();
-			//						return new WebResourceResponse(connection.getContentType().split("\\;")[0], connection.getContentEncoding(), inputStream);
-			//					} catch (MalformedURLException e) {
-			//						// TODO Auto-generated catch block
-			//						e.printStackTrace();
-			//					} catch (ProtocolException e) {
-			//						// TODO Auto-generated catch block
-			//						e.printStackTrace();
-			//					} catch (IOException e) {
-			//						// TODO Auto-generated catch block
-			//						e.printStackTrace();
-			//					}
-			//				}
-			//
-			//				return super.shouldInterceptRequest(view, request);
-			//			}
-
 
 
 		});
@@ -225,11 +130,7 @@ public class MainActivity extends Activity {
 				}
 
 		});
-		//webView.getSettings().setDomStorageEnabled(true);
-		//webView.getSettings().setDatabaseEnabled(true);
-		//if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
-		//	webView.getSettings().setDatabasePath("/data/data/" + webView.getContext().getPackageName() + "/databases/");
-		//}
+
 		webView.addJavascriptInterface(this, "Android");
 
 
@@ -240,7 +141,6 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		finish();
 	}
 
 	@Override
@@ -420,7 +320,7 @@ public class MainActivity extends Activity {
 				final DatagramPacket p = new DatagramPacket(data, 1500);
 
 				socket.setBroadcast(true);
-				socket.setSoTimeout(2000);
+				socket.setSoTimeout(5000);
 				while(true){
 					socket.receive(p);
 
@@ -431,7 +331,7 @@ public class MainActivity extends Activity {
 
 							currAddress = p.getAddress().getHostAddress();
 							//webView.loadUrl("file:///android_asset/index.html");
-							webView.loadUrl("https://"+p.getAddress().getHostAddress());
+							webView.loadUrl(currAddress);
 
 						}
 					});
